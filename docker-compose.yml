@@ -1,0 +1,52 @@
+services:
+  web:
+    build: .
+    container_name: tg_monitor_web
+    command: sh -c "/app/entrypoint.sh gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - sqlite_data:/app/data
+      - telethon_data:/app/telethon_session
+    env_file:
+      - .env
+    environment:
+      - TELETHON_SESSION=/app/telethon_session/telethon_monitor
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  bot:
+    build: .
+    container_name: tg_monitor_bot
+    command: python manage.py run_bot
+    volumes:
+      - .:/app
+      - sqlite_data:/app/data
+      - telethon_data:/app/telethon_session
+    env_file:
+      - .env
+    environment:
+      - TELETHON_SESSION=/app/telethon_session/telethon_monitor
+    restart: unless-stopped
+    depends_on:
+      - web
+
+  listener:
+    build: .
+    container_name: tg_monitor_listener
+    command: python manage.py run_listener
+    volumes:
+      - .:/app
+      - sqlite_data:/app/data
+      - telethon_data:/app/telethon_session
+    env_file:
+      - .env
+    environment:
+      - TELETHON_SESSION=/app/telethon_session/telethon_monitor
+    restart: unless-stopped
+    depends_on:
+      - web
+
+volumes:
+  sqlite_data:
+  telethon_data:

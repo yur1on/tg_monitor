@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.env
+.telethon*
+telethon_monitor.session
+telethon_monitor.session-journal
+staticfiles/
+media/
+.idea/
+.vscode/
+.DS_Store
