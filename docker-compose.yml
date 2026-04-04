@@ -1,19 +1,39 @@
 services:
+  postgres:
+    image: postgres:16
+    container_name: tg_monitor_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tg_monitor
+      POSTGRES_USER: tg_monitor
+      POSTGRES_PASSWORD: tg_monitor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   web:
     build: .
     container_name: tg_monitor_web
     command: sh -c "/app/entrypoint.sh gunicorn config.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - .:/app
-      - sqlite_data:/app/data
       - telethon_data:/app/telethon_session
     env_file:
       - .env
     environment:
-      - TELETHON_SESSION=/app/telethon_session/telethon_monitor
+      DB_ENGINE: postgres
+      POSTGRES_DB: tg_monitor
+      POSTGRES_USER: tg_monitor
+      POSTGRES_PASSWORD: tg_monitor
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      TELETHON_SESSION: /app/telethon_session/telethon_monitor
     ports:
       - "8000:8000"
     restart: unless-stopped
+    depends_on:
+      - postgres
 
   bot:
     build: .
@@ -21,14 +41,20 @@ services:
     command: python manage.py run_bot
     volumes:
       - .:/app
-      - sqlite_data:/app/data
       - telethon_data:/app/telethon_session
     env_file:
       - .env
     environment:
-      - TELETHON_SESSION=/app/telethon_session/telethon_monitor
+      DB_ENGINE: postgres
+      POSTGRES_DB: tg_monitor
+      POSTGRES_USER: tg_monitor
+      POSTGRES_PASSWORD: tg_monitor
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      TELETHON_SESSION: /app/telethon_session/telethon_monitor
     restart: unless-stopped
     depends_on:
+      - postgres
       - web
 
   listener:
@@ -37,16 +63,22 @@ services:
     command: python manage.py run_listener
     volumes:
       - .:/app
-      - sqlite_data:/app/data
       - telethon_data:/app/telethon_session
     env_file:
       - .env
     environment:
-      - TELETHON_SESSION=/app/telethon_session/telethon_monitor
+      DB_ENGINE: postgres
+      POSTGRES_DB: tg_monitor
+      POSTGRES_USER: tg_monitor
+      POSTGRES_PASSWORD: tg_monitor
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      TELETHON_SESSION: /app/telethon_session/telethon_monitor
     restart: unless-stopped
     depends_on:
+      - postgres
       - web
 
 volumes:
-  sqlite_data:
+  postgres_data:
   telethon_data:

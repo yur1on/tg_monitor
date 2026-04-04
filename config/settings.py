@@ -55,19 +55,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "data" / "db.sqlite3",
+DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
+
+if DB_ENGINE == "postgres":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DB", "tg_monitor"),
+            "USER": os.getenv("POSTGRES_USER", "tg_monitor"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "tg_monitor"),
+            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+            "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "data" / "db.sqlite3",
+        }
+    }
 
 LANGUAGE_CODE = "ru"
 TIME_ZONE = "Europe/Minsk"
@@ -79,5 +87,4 @@ LANGUAGES = [
 ]
 
 STATIC_URL = "static/"
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
