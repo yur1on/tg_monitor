@@ -4,12 +4,14 @@ import hashlib
 from html import escape
 
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from dotenv import load_dotenv
 from telethon import TelegramClient, events
 from asgiref.sync import sync_to_async
 
 from monitor.models import MonitoredChat, UserChatSubscription, Keyword, StopWord, MatchedMessage
 from notifications.services import send_telegram_message
+from users.models import AppUser
 
 load_dotenv()
 
@@ -20,11 +22,13 @@ SESSION_NAME = os.getenv("TELETHON_SESSION", "telethon_monitor")
 COUNTRY_LABELS = {
     "BY": "Беларусь",
     "RU": "Россия",
+    "OTHER": "Другая страна",
 }
 
 COUNTRY_EMOJIS = {
     "BY": "🇧🇾",
     "RU": "🇷🇺",
+    "OTHER": "🌍",
 }
 
 
@@ -85,6 +89,19 @@ def create_matched_message_sync(user_id: int, message_hash: str):
     )
 
 
+def user_has_access_sync(user_id: int) -> bool:
+    user = AppUser.objects.filter(id=user_id, is_active=True).first()
+    if not user:
+        return False
+
+    now = timezone.now()
+
+    has_trial = bool(user.trial_expires_at and user.trial_expires_at > now)
+    has_subscription = bool(user.subscription_expires_at and user.subscription_expires_at > now)
+
+    return has_trial or has_subscription
+
+
 class Command(BaseCommand):
     help = "Запуск мониторинга чатов через Telethon"
 
@@ -131,6 +148,10 @@ class Command(BaseCommand):
                 return
 
             for subscription in subscriptions:
+                has_access = await sync_to_async(user_has_access_sync)(subscription.user.id)
+                if not has_access:
+                    continue
+
                 keywords = await sync_to_async(get_keywords_sync)(subscription.user.id)
                 stop_words = await sync_to_async(get_stop_words_sync)(subscription.user.id)
 
@@ -176,7 +197,7 @@ class Command(BaseCommand):
 
                         notify_text = (
                             "<b>🔔 Новое совпадение</b>\n\n"
-                            f"💬 <b>Чат:</b> {escape(monitored_chat.title)}\n"
+                            f"💬 <b>Чат:</b> {escape(monitored_chat.title or monitored_chat.input_name or 'Без названия')}\n"
                             f"{country_emoji} <b>Страна:</b> {country_label}\n"
                             f"🔑 <b>Ключевое слово:</b> {escape(keyword.phrase)}\n\n"
                             f"<b>📝 Сообщение:</b>\n"
