@@ -6,13 +6,14 @@ class MonitoredChat(models.Model):
     COUNTRY_CHOICES = [
         ("BY", "Беларусь"),
         ("RU", "Россия"),
+        ("OTHER", "Другая страна"),
     ]
 
     input_name = models.CharField("Что ввели", max_length=255, blank=True)
     title = models.CharField("Название", max_length=255, blank=True)
     telegram_chat_id = models.BigIntegerField("Telegram Chat ID", unique=True, null=True, blank=True)
     username = models.CharField("Username/ссылка", max_length=255, blank=True)
-    country = models.CharField("Страна", max_length=2, choices=COUNTRY_CHOICES)
+    country = models.CharField("Страна", max_length=10, choices=COUNTRY_CHOICES)
     is_active = models.BooleanField("Активен", default=True)
     created_at = models.DateTimeField("Создан", auto_now_add=True)
 
@@ -98,10 +99,11 @@ class ChatRequest(models.Model):
     COUNTRY_CHOICES = [
         ("BY", "Беларусь"),
         ("RU", "Россия"),
+        ("OTHER", "Другая страна"),
     ]
 
     user = models.ForeignKey(AppUser, verbose_name="Пользователь", on_delete=models.CASCADE)
-    country = models.CharField("Страна", max_length=2, choices=COUNTRY_CHOICES)
+    country = models.CharField("Страна", max_length=10, choices=COUNTRY_CHOICES)
     chat_input = models.CharField("Имя чата или ссылка", max_length=255)
     comment = models.CharField("Комментарий", max_length=255, blank=True)
     is_processed = models.BooleanField("Обработана", default=False)

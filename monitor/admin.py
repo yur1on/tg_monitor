@@ -28,7 +28,16 @@ def fill_chat_data(modeladmin, request, queryset):
 
 @admin.register(MonitoredChat)
 class MonitoredChatAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "country", "input_name", "telegram_chat_id", "username", "is_active", "created_at")
+    list_display = (
+        "id",
+        "title",
+        "country",
+        "input_name",
+        "telegram_chat_id",
+        "username",
+        "is_active",
+        "created_at",
+    )
     list_filter = ("country", "is_active")
     search_fields = ("title", "username", "input_name", "telegram_chat_id")
     actions = [fill_chat_data]

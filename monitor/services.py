@@ -130,10 +130,11 @@ def get_chats_by_country_with_status(telegram_id: int, country: str):
 
     result = []
     for chat in chats:
+        title = chat.title or chat.input_name or f"Чат #{chat.id}"
         result.append({
             "id": chat.id,
-            "title": chat.title,
-            "short_title": shorten_text(chat.title, 30),
+            "title": title,
+            "short_title": shorten_text(title, 30),
             "username": chat.username,
             "country": chat.country,
             "is_connected": chat.id in user_chat_ids,

@@ -27,7 +27,7 @@ def get_general_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🛑 Стоп-слова")],
-            [KeyboardButton(text="💳 Подписка")],
+            [KeyboardButton(text="⭐ Подписка")],
             [KeyboardButton(text="ℹ️ Информация")],
             [KeyboardButton(text="⬅️ Назад")],
         ],
@@ -44,7 +44,6 @@ def get_keywords_menu():
             [KeyboardButton(text="⬅️ Назад")],
         ],
         resize_keyboard=True,
-        input_field_placeholder="Управление ключевыми словами",
     )
 
 
@@ -56,7 +55,6 @@ def get_stop_words_menu():
             [KeyboardButton(text="⬅️ Назад")],
         ],
         resize_keyboard=True,
-        input_field_placeholder="Управление стоп-словами",
     )
 
 
@@ -77,6 +75,9 @@ def build_country_select_keyboard(prefix: str = "chat_country") -> InlineKeyboar
     builder.row(
         InlineKeyboardButton(text="🇧🇾 Беларусь", callback_data=f"{prefix}:BY"),
         InlineKeyboardButton(text="🇷🇺 Россия", callback_data=f"{prefix}:RU"),
+    )
+    builder.row(
+        InlineKeyboardButton(text="🌍 Другая страна", callback_data=f"{prefix}:OTHER"),
     )
     return builder.as_markup()
 
@@ -129,5 +130,36 @@ def build_chat_request_country_keyboard() -> InlineKeyboardMarkup:
     builder.row(
         InlineKeyboardButton(text="🇧🇾 Беларусь", callback_data="request_country:BY"),
         InlineKeyboardButton(text="🇷🇺 Россия", callback_data="request_country:RU"),
+    )
+    builder.row(
+        InlineKeyboardButton(text="🌍 Другая страна", callback_data="request_country:OTHER"),
+    )
+    return builder.as_markup()
+
+
+def build_subscription_method_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="⭐ Оплата Stars", callback_data="payment_method:stars"),
+    )
+    builder.row(
+        InlineKeyboardButton(text="💳 Оплата ЮMoney", callback_data="payment_method:yoomoney"),
+    )
+    return builder.as_markup()
+
+
+def build_subscription_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="⭐ 1 месяц — 100", callback_data="buy_sub:30"),
+    )
+    builder.row(
+        InlineKeyboardButton(text="⭐ 3 месяца — 250", callback_data="buy_sub:90"),
+    )
+    builder.row(
+        InlineKeyboardButton(text="⭐ 12 месяцев — 1000", callback_data="buy_sub:365"),
+    )
+    builder.row(
+        InlineKeyboardButton(text="⬅️ Назад к способам оплаты", callback_data="payment_back"),
     )
     return builder.as_markup()
