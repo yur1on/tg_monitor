@@ -34,6 +34,9 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+    networks:
+      - default
+      - shared_proxy
 
   bot:
     build: .
@@ -82,3 +85,7 @@ services:
 volumes:
   postgres_data:
   telethon_data:
+
+networks:
+  shared_proxy:
+    external: true
