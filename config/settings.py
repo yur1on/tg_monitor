@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "monitor",
     "notifications",
     "botapp",
+    "payments",
 ]
 
 MIDDLEWARE = [
