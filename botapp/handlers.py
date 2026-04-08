@@ -79,8 +79,10 @@ async def render_chats_by_country(target, telegram_id: int, country: str):
     if not chats:
         text = (
             f"<b>💬 Выбор чатов</b>\n"
-            f"{country_emoji} <b>Страна:</b> {country_label}\n\n"
-            f"Пока нет доступных чатов для этой категории."
+            f"╭──────────────\n"
+            f"{country_emoji} <b>Страна:</b> {country_label}\n"
+            f"╰──────────────\n\n"
+            "Пока нет доступных чатов для этой категории."
         )
         if isinstance(target, Message):
             await target.answer(text, parse_mode="HTML")
@@ -93,20 +95,23 @@ async def render_chats_by_country(target, telegram_id: int, country: str):
 
     lines = [
         "<b>💬 Выбор чатов</b>",
+        "╭──────────────",
         f"{country_emoji} <b>Страна:</b> {country_label}",
+        f"📊 <b>Всего чатов:</b> {total_count}",
+        f"✅ <b>Подключено:</b> {connected_count}",
+        "╰──────────────",
         "",
-        f"<b>Всего чатов:</b> {total_count}",
-        f"<b>Подключено:</b> {connected_count}",
-        "",
-        "<b>Список чатов:</b>",
+        "<b>📋 Список чатов</b>",
     ]
 
-    for chat in chats:
+    for index, chat in enumerate(chats, start=1):
         status = "✅" if chat["is_connected"] else "❌"
-        lines.append(f"{status} {escape(chat['short_title'])}")
+        lines.append("──────────────")
+        lines.append(f"{index}. {status} {escape(chat['short_title'])}")
 
+    lines.append("──────────────")
     lines.append("")
-    lines.append("<b>👇 Нажмите на кнопку ниже, чтобы подключить или отключить чат</b>")
+    lines.append("👇 <b>Нажмите кнопку ниже, чтобы подключить или отключить чат</b>")
 
     text = "\n".join(lines)
     keyboard = build_chats_inline_keyboard(chats)
@@ -152,14 +157,17 @@ async def start_handler(message: Message, state: FSMContext):
         "<b>Что можно делать:</b>\n"
         "• отслеживать сообщения по ключевым словам\n"
         "• исключать мусор через стоп-слова\n"
-        "• выбирать чаты по странам\n"
+        "• выбирать нужные Вам чаты\n"
         "• предлагать новые чаты для добавления\n"
     )
 
     if status["has_active_trial"]:
         text += f"\n<b>🎁 Пробный период активен:</b> осталось {status['days_left']} дн."
     elif status["has_active_subscription"]:
-        payment_method = PAYMENT_METHOD_LABELS.get(status["payment_method"], status["payment_method"] or "не указан")
+        payment_method = PAYMENT_METHOD_LABELS.get(
+            status["payment_method"],
+            status["payment_method"] or "не указан"
+        )
         text += (
             f"\n<b>⭐ Подписка активна:</b> осталось {status['days_left']} дн.\n"
             f"<b>Способ оплаты:</b> {payment_method}"
@@ -219,8 +227,8 @@ async def add_keyword_start(message: Message, state: FSMContext):
         "<b>Введите новое ключевое слово или фразу.</b>\n\n"
         "Примеры:\n"
         "• ищу дисплей\n"
-        "• куплю плату\n"
-        "• iphone 11",
+        "• предложите\n"
+        "• iphone 17",
         parse_mode="HTML",
     )
 
@@ -297,7 +305,10 @@ async def keyword_delete_callback(callback: CallbackQuery):
         return
 
     keyword_id = int(raw_keyword_id)
-    success, keyword = await sync_to_async(delete_user_keyword_by_id)(callback.from_user.id, keyword_id)
+    success, keyword = await sync_to_async(delete_user_keyword_by_id)(
+        callback.from_user.id,
+        keyword_id
+    )
 
     if not success:
         await callback.answer("Слово не найдено", show_alert=True)
@@ -424,7 +435,10 @@ async def stop_word_delete_callback(callback: CallbackQuery):
         return
 
     stop_word_id = int(raw_stop_word_id)
-    success, stop_word = await sync_to_async(delete_user_stop_word_by_id)(callback.from_user.id, stop_word_id)
+    success, stop_word = await sync_to_async(delete_user_stop_word_by_id)(
+        callback.from_user.id,
+        stop_word_id
+    )
 
     if not success:
         await callback.answer("Стоп-слово не найдено", show_alert=True)
@@ -494,7 +508,10 @@ async def chat_toggle_callback(callback: CallbackQuery, state: FSMContext):
     chat_id = int(raw_chat_id)
 
     try:
-        success, result, chat = await sync_to_async(toggle_user_chat)(callback.from_user.id, chat_id)
+        success, result, chat = await sync_to_async(toggle_user_chat)(
+            callback.from_user.id,
+            chat_id
+        )
     except Exception as e:
         print("Ошибка toggle_user_chat:", repr(e))
         await callback.answer(f"Ошибка: {str(e)[:150]}", show_alert=True)
@@ -532,11 +549,11 @@ async def request_country_callback(callback: CallbackQuery, state: FSMContext):
         f"<b>Выбрано:</b> {COUNTRY_LABELS.get(country, country)}\n\n"
         "Теперь отправьте username чата или ссылку.\n\n"
         "Примеры:\n"
-        "@zapchastygsm\n"
-        "https://t.me/zapchastygsm",
+        "@mobirazbor_chat\n"
+        "https://t.me/mobirazbor_chat",
         parse_mode="HTML",
+        reply_markup=None,
     )
-
 
 @router.message(ChatRequestStates.waiting_for_chat_request)
 async def request_chat_finish(message: Message, state: FSMContext):
@@ -558,7 +575,12 @@ async def request_chat_finish(message: Message, state: FSMContext):
         await message.answer("Сначала выберите страну заявки.", reply_markup=get_main_menu())
         return
 
-    request_obj = await sync_to_async(create_chat_request)(message.from_user.id, country, chat_input, "")
+    request_obj = await sync_to_async(create_chat_request)(
+        message.from_user.id,
+        country,
+        chat_input,
+        ""
+    )
 
     await state.clear()
 
@@ -581,7 +603,10 @@ async def subscription_handler(message: Message, state: FSMContext):
     status = await sync_to_async(get_user_access_status)(message.from_user.id)
 
     if status["has_active_subscription"]:
-        payment_method = PAYMENT_METHOD_LABELS.get(status["payment_method"], status["payment_method"] or "не указан")
+        payment_method = PAYMENT_METHOD_LABELS.get(
+            status["payment_method"],
+            status["payment_method"] or "не указан"
+        )
         text = (
             "<b>⭐ Подписка</b>\n\n"
             "Подписка активна.\n"
@@ -614,7 +639,7 @@ async def subscription_handler(message: Message, state: FSMContext):
 async def payment_method_stars_handler(callback: CallbackQuery):
     await callback.message.edit_text(
         "<b>⭐ Оплата через Telegram Stars</b>\n\n"
-        "Выберите тариф:",
+        "Выберите тариф в звёздах:",
         reply_markup=build_subscription_keyboard("stars"),
         parse_mode="HTML",
     )
@@ -625,7 +650,7 @@ async def payment_method_stars_handler(callback: CallbackQuery):
 async def payment_method_yoomoney_handler(callback: CallbackQuery):
     await callback.message.edit_text(
         "<b>💳 Оплата через ЮMoney</b>\n\n"
-        "Выберите тариф:",
+        "Выберите тариф в российских рублях:",
         reply_markup=build_subscription_keyboard("yoomoney"),
         parse_mode="HTML",
     )
@@ -689,7 +714,7 @@ async def buy_subscription_callback(callback: CallbackQuery, bot: Bot):
             await callback.message.edit_text(
                 "<b>💳 Счёт ЮMoney создан</b>\n\n"
                 f"Тариф: <b>{escape(plan['title'])}</b>\n"
-                f"Сумма: <b>{plan['rub']}</b> RUB\n\n"
+                f"Сумма: <b>{plan['rub']} ₽</b>\n\n"
                 "1. Нажмите на ссылку ниже\n"
                 "2. Оплатите картой или через кошелёк ЮMoney\n"
                 "3. После подтверждения подписка активируется автоматически\n\n"
@@ -753,11 +778,9 @@ async def info_handler(message: Message, state: FSMContext):
         "<b>Подписка:</b>\n"
         "• 15 дней бесплатно после первого запуска\n"
         "• далее доступ открывается по подписке\n"
-        "• 1 месяц — 200 RUB\n"
-        "• 3 месяца — 300 RUB\n"
-        "• 12 месяцев — 1000 RUB\n"
-        "• доступны способы оплаты: Telegram Stars и ЮMoney\n"
-        "• при оплате ЮMoney доступ активируется автоматически после уведомления",
+        "• Telegram Stars: 1 месяц — 100 Stars, 3 месяца — 250 Stars, 12 месяцев — 1000 Stars\n"
+        "• ЮMoney: 1 месяц — 200 ₽, 3 месяца — 300 ₽, 12 месяцев — 1000 ₽\n"
+        "• доступны способы оплаты: Telegram Stars и ЮMoney\n",
         reply_markup=get_general_menu(),
         parse_mode="HTML",
     )

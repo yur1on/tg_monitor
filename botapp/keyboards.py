@@ -86,9 +86,9 @@ def build_chats_inline_keyboard(chats: list[dict]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     for chat in chats:
-        status_icon = "🟢" if chat["is_connected"] else "⚪️"
+        status_icon = "✅" if chat["is_connected"] else "❌"
         action_text = "Отключить" if chat["is_connected"] else "Подключить"
-        text = f"{status_icon} {action_text}: {chat['short_title']}"
+        text = f"{status_icon} {action_text} — {chat['short_title']}"
         callback_data = f"chat_toggle:{chat['id']}"
         builder.row(
             InlineKeyboardButton(text=text, callback_data=callback_data)
@@ -150,15 +150,38 @@ def build_subscription_method_keyboard() -> InlineKeyboardMarkup:
 
 def build_subscription_keyboard(payment_method: str = "stars") -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(
-        InlineKeyboardButton(text="1 месяц — 200 RUB", callback_data=f"buy_sub:{payment_method}:30"),
-    )
-    builder.row(
-        InlineKeyboardButton(text="3 месяца — 300 RUB", callback_data=f"buy_sub:{payment_method}:90"),
-    )
-    builder.row(
-        InlineKeyboardButton(text="12 месяцев — 1000 RUB", callback_data=f"buy_sub:{payment_method}:365"),
-    )
+
+    if payment_method == "stars":
+        builder.row(
+            InlineKeyboardButton(text="⭐ 1 месяц — 100 Stars", callback_data="buy_sub:stars:30"),
+        )
+        builder.row(
+            InlineKeyboardButton(text="⭐ 3 месяца — 250 Stars", callback_data="buy_sub:stars:90"),
+        )
+        builder.row(
+            InlineKeyboardButton(text="⭐ 12 месяцев — 1000 Stars", callback_data="buy_sub:stars:365"),
+        )
+    elif payment_method == "yoomoney":
+        builder.row(
+            InlineKeyboardButton(text="💳 1 месяц — 200 ₽", callback_data="buy_sub:yoomoney:30"),
+        )
+        builder.row(
+            InlineKeyboardButton(text="💳 3 месяца — 300 ₽", callback_data="buy_sub:yoomoney:90"),
+        )
+        builder.row(
+            InlineKeyboardButton(text="💳 12 месяцев — 1000 ₽", callback_data="buy_sub:yoomoney:365"),
+        )
+    else:
+        builder.row(
+            InlineKeyboardButton(text="1 месяц", callback_data=f"buy_sub:{payment_method}:30"),
+        )
+        builder.row(
+            InlineKeyboardButton(text="3 месяца", callback_data=f"buy_sub:{payment_method}:90"),
+        )
+        builder.row(
+            InlineKeyboardButton(text="12 месяцев", callback_data=f"buy_sub:{payment_method}:365"),
+        )
+
     builder.row(
         InlineKeyboardButton(text="⬅️ Назад к способам оплаты", callback_data="payment_back"),
     )
