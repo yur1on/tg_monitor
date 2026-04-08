@@ -6,6 +6,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from asgiref.sync import sync_to_async
 
+from users.models import AppUser
 from users.services import (
     get_or_create_app_user,
     ensure_user_trial,
@@ -24,6 +25,7 @@ from monitor.services import (
     toggle_user_chat,
     create_chat_request,
 )
+from payments.services import create_yoomoney_invoice, build_yoomoney_quickpay_url
 from .keyboards import (
     get_main_menu,
     get_general_menu,
@@ -62,9 +64,9 @@ PAYMENT_METHOD_LABELS = {
 }
 
 SUBSCRIPTION_PLANS = {
-    "30": {"title": "Подписка на 1 месяц", "stars": 100, "days": 30},
-    "90": {"title": "Подписка на 3 месяца", "stars": 250, "days": 90},
-    "365": {"title": "Подписка на 12 месяцев", "stars": 1000, "days": 365},
+    "30": {"title": "Подписка на 1 месяц", "stars": 100, "days": 30, "rub": 200},
+    "90": {"title": "Подписка на 3 месяца", "stars": 250, "days": 90, "rub": 300},
+    "365": {"title": "Подписка на 12 месяцев", "stars": 1000, "days": 365, "rub": 1000},
 }
 
 
@@ -613,7 +615,7 @@ async def payment_method_stars_handler(callback: CallbackQuery):
     await callback.message.edit_text(
         "<b>⭐ Оплата через Telegram Stars</b>\n\n"
         "Выберите тариф:",
-        reply_markup=build_subscription_keyboard(),
+        reply_markup=build_subscription_keyboard("stars"),
         parse_mode="HTML",
     )
     await callback.answer()
@@ -623,9 +625,8 @@ async def payment_method_stars_handler(callback: CallbackQuery):
 async def payment_method_yoomoney_handler(callback: CallbackQuery):
     await callback.message.edit_text(
         "<b>💳 Оплата через ЮMoney</b>\n\n"
-        "Этот способ скоро будет подключён.\n"
-        "Пока доступна оплата через Telegram Stars.",
-        reply_markup=build_subscription_method_keyboard(),
+        "Выберите тариф:",
+        reply_markup=build_subscription_keyboard("yoomoney"),
         parse_mode="HTML",
     )
     await callback.answer()
@@ -643,26 +644,68 @@ async def payment_back_handler(callback: CallbackQuery):
 
 @router.callback_query(F.data.startswith("buy_sub:"))
 async def buy_subscription_callback(callback: CallbackQuery, bot: Bot):
-    plan_key = callback.data.split(":")[1]
+    parts = callback.data.split(":")
+
+    if len(parts) == 2:
+        payment_method = "stars"
+        plan_key = parts[1]
+    else:
+        payment_method = parts[1]
+        plan_key = parts[2]
+
     plan = SUBSCRIPTION_PLANS.get(plan_key)
 
     if not plan:
         await callback.answer("Тариф не найден", show_alert=True)
         return
 
-    prices = [LabeledPrice(label=plan["title"], amount=plan["stars"])]
+    if payment_method == "stars":
+        prices = [LabeledPrice(label=plan["title"], amount=plan["stars"])]
 
-    await bot.send_invoice(
-        chat_id=callback.from_user.id,
-        title=plan["title"],
-        description=f"Доступ к боту на {plan['days']} дней",
-        payload=f"sub_{plan_key}",
-        currency="XTR",
-        prices=prices,
-        provider_token="",
-    )
+        await bot.send_invoice(
+            chat_id=callback.from_user.id,
+            title=plan["title"],
+            description=f"Доступ к боту на {plan['days']} дней",
+            payload=f"sub_{plan_key}",
+            currency="XTR",
+            prices=prices,
+            provider_token="",
+        )
 
-    await callback.answer("Счёт отправлен")
+        await callback.answer("Счёт отправлен")
+        return
+
+    if payment_method == "yoomoney":
+        try:
+            user = await sync_to_async(AppUser.objects.get)(telegram_id=callback.from_user.id)
+            invoice = await sync_to_async(create_yoomoney_invoice)(user, plan_key)
+
+            if not invoice:
+                await callback.answer("Не удалось создать счёт", show_alert=True)
+                return
+
+            pay_url = await sync_to_async(build_yoomoney_quickpay_url)(invoice)
+
+            await callback.message.edit_text(
+                "<b>💳 Счёт ЮMoney создан</b>\n\n"
+                f"Тариф: <b>{escape(plan['title'])}</b>\n"
+                f"Сумма: <b>{plan['rub']}</b> RUB\n\n"
+                "1. Нажмите на ссылку ниже\n"
+                "2. Оплатите картой или через кошелёк ЮMoney\n"
+                "3. После подтверждения подписка активируется автоматически\n\n"
+                f'<a href="{pay_url}">👉 Оплатить через ЮMoney</a>',
+                reply_markup=build_subscription_method_keyboard(),
+                parse_mode="HTML",
+                disable_web_page_preview=True,
+            )
+            await callback.answer("Ссылка на оплату готова")
+            return
+        except Exception as e:
+            print("Ошибка создания инвойса ЮMoney:", repr(e))
+            await callback.answer("Ошибка создания счёта", show_alert=True)
+            return
+
+    await callback.answer("Неизвестный способ оплаты", show_alert=True)
 
 
 @router.pre_checkout_query()
@@ -710,8 +753,11 @@ async def info_handler(message: Message, state: FSMContext):
         "<b>Подписка:</b>\n"
         "• 15 дней бесплатно после первого запуска\n"
         "• далее доступ открывается по подписке\n"
+        "• 1 месяц — 200 RUB\n"
+        "• 3 месяца — 300 RUB\n"
+        "• 12 месяцев — 1000 RUB\n"
         "• доступны способы оплаты: Telegram Stars и ЮMoney\n"
-        "• ЮMoney пока в режиме подготовки",
+        "• при оплате ЮMoney доступ активируется автоматически после уведомления",
         reply_markup=get_general_menu(),
         parse_mode="HTML",
     )

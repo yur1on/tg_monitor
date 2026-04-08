@@ -97,3 +97,16 @@ LANGUAGES = [
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8010").rstrip("/")
+YOOMONEY_WALLET = os.getenv("YOOMONEY_WALLET", "")
+YOOMONEY_NOTIFICATION_SECRET = os.getenv("YOOMONEY_NOTIFICATION_SECRET", "")
+YOOMONEY_SUCCESS_URL = os.getenv("YOOMONEY_SUCCESS_URL", APP_BASE_URL)
+YOOMONEY_REQUIRE_EXACT_AMOUNT = os.getenv("YOOMONEY_REQUIRE_EXACT_AMOUNT", "True") == "True"
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]

@@ -148,16 +148,16 @@ def build_subscription_method_keyboard() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def build_subscription_keyboard() -> InlineKeyboardMarkup:
+def build_subscription_keyboard(payment_method: str = "stars") -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="⭐ 1 месяц — 100", callback_data="buy_sub:30"),
+        InlineKeyboardButton(text="1 месяц — 200 RUB", callback_data=f"buy_sub:{payment_method}:30"),
     )
     builder.row(
-        InlineKeyboardButton(text="⭐ 3 месяца — 250", callback_data="buy_sub:90"),
+        InlineKeyboardButton(text="3 месяца — 300 RUB", callback_data=f"buy_sub:{payment_method}:90"),
     )
     builder.row(
-        InlineKeyboardButton(text="⭐ 12 месяцев — 1000", callback_data="buy_sub:365"),
+        InlineKeyboardButton(text="12 месяцев — 1000 RUB", callback_data=f"buy_sub:{payment_method}:365"),
     )
     builder.row(
         InlineKeyboardButton(text="⬅️ Назад к способам оплаты", callback_data="payment_back"),
