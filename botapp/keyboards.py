@@ -86,12 +86,16 @@ def build_chats_inline_keyboard(chats: list[dict]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     for chat in chats:
-        status_icon = "✅" if chat["is_connected"] else "❌"
-        action_text = "Отключить" if chat["is_connected"] else "Подключить"
-        text = f"{status_icon} {action_text} — {chat['short_title']}"
-        callback_data = f"chat_toggle:{chat['id']}"
+        if chat["is_connected"]:
+            button_text = f"🔴 ОТКЛЮЧИТЬ — {chat['short_title']}"
+        else:
+            button_text = f"🟢 ПОДКЛЮЧИТЬ — {chat['short_title']}"
+
         builder.row(
-            InlineKeyboardButton(text=text, callback_data=callback_data)
+            InlineKeyboardButton(
+                text=button_text,
+                callback_data=f"chat_toggle:{chat['id']}"
+            )
         )
 
     return builder.as_markup()

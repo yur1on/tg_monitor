@@ -170,8 +170,11 @@ async def start_handler(message: Message, state: FSMContext):
     status = await sync_to_async(get_user_access_status)(tg_user.id)
 
     text = (
-        "<b>Добро пожаловать.</b>\n\n"
-        "Этот бот помогает мониторить Telegram-чаты по вашим ключевым словам.\n\n"
+        "Этот бот собирает в одном месте только нужные вам сообщения из Telegram-чатов по ключевым словам.\n\n"
+        "Вам не нужно вручную мониторить десятки чатов — бот сам отслеживает новые сообщения и присылает только подходящие совпадения.\n\n"
+        "Это удобно, если:\n"
+        "• вы продавец и следите, кто ищет товар или запчасти\n"
+        "• вы покупатель и хотите быстро видеть, кто что продаёт\n\n"
         "<b>Что можно делать:</b>\n"
         "• отслеживать сообщения по ключевым словам\n"
         "• исключать мусор через стоп-слова\n"
@@ -485,13 +488,12 @@ async def chats_handler(message: Message, state: FSMContext):
 
     await message.answer(
         "<b>💬 Раздел «Мои чаты»</b>\n\n"
-        "Здесь вы можете:\n"
-        "• открыть список чатов по стране\n"
-        "• предложить новый чат для добавления",
+        "📂 <b>Выбрать чат</b> — открыть список доступных чатов и подключить нужные\n"
+        "➕ <b>Предложить новый чат</b> — если нужного чата нет в списке\n\n"
+        "👇 Выберите действие ниже",
         reply_markup=get_chats_menu(),
         parse_mode="HTML",
     )
-
 
 @router.message(F.text.in_(["📂 Выбрать чат", "Выбрать чат"]))
 async def choose_chat_country_handler(message: Message, state: FSMContext):
@@ -500,7 +502,8 @@ async def choose_chat_country_handler(message: Message, state: FSMContext):
 
     await state.set_state(ChatStates.choosing_country)
     await message.answer(
-        "<b>Выберите страну или категорию чатов:</b>",
+        "<b>🌍 Сначала выберите страну:</b>\n\n"
+        "После этого я покажу доступные чаты для мониторинга.",
         reply_markup=build_country_select_keyboard("chat_country"),
         parse_mode="HTML",
     )
@@ -793,9 +796,7 @@ async def info_handler(message: Message, state: FSMContext):
         "• подключаете нужные чаты\n"
         "• бот фильтрует сообщения и присылает совпадения\n\n"
         "<b>Дополнительно:</b>\n"
-        "• можно добавлять стоп-слова\n"
-        "• дубли не присылаются\n"
-        "• одинаковые сообщения из разных чатов не повторяются\n\n"
+        "• можно добавлять стоп-слова\n\n"
         "<b>🎁 Пробный период:</b>\n"
         "• после первого запуска /start даётся 15 дней бесплатно\n\n"
         "<b>⭐ Telegram Stars:</b>\n"
