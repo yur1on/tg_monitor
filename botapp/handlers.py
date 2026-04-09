@@ -106,8 +106,16 @@ async def render_chats_by_country(target, telegram_id: int, country: str):
 
     for index, chat in enumerate(chats, start=1):
         status = "✅" if chat["is_connected"] else "❌"
+        username = (chat.get("username") or "").strip().lstrip("@")
+        title = escape(chat["short_title"])
+
         lines.append("──────────────")
-        lines.append(f"{index}. {status} {escape(chat['short_title'])}")
+
+        if username:
+            chat_link = f"https://t.me/{username}"
+            lines.append(f'{index}. {status} <a href="{chat_link}">{title}</a>')
+        else:
+            lines.append(f"{index}. {status} {title}")
 
     lines.append("──────────────")
     lines.append("")
@@ -117,9 +125,19 @@ async def render_chats_by_country(target, telegram_id: int, country: str):
     keyboard = build_chats_inline_keyboard(chats)
 
     if isinstance(target, Message):
-        await target.answer(text, reply_markup=keyboard, parse_mode="HTML")
+        await target.answer(
+            text,
+            reply_markup=keyboard,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
     else:
-        await target.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
+        await target.message.edit_text(
+            text,
+            reply_markup=keyboard,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
 
 
 async def ensure_access_or_paywall(message: Message) -> bool:
@@ -157,7 +175,7 @@ async def start_handler(message: Message, state: FSMContext):
         "<b>Что можно делать:</b>\n"
         "• отслеживать сообщения по ключевым словам\n"
         "• исключать мусор через стоп-слова\n"
-        "• выбирать нужные Вам чаты\n"
+        "• выбирать чаты по странам\n"
         "• предлагать новые чаты для добавления\n"
     )
 
@@ -227,8 +245,8 @@ async def add_keyword_start(message: Message, state: FSMContext):
         "<b>Введите новое ключевое слово или фразу.</b>\n\n"
         "Примеры:\n"
         "• ищу дисплей\n"
-        "• предложите\n"
-        "• iphone 17",
+        "• куплю плату\n"
+        "• iphone 11",
         parse_mode="HTML",
     )
 
@@ -555,6 +573,7 @@ async def request_country_callback(callback: CallbackQuery, state: FSMContext):
         reply_markup=None,
     )
 
+
 @router.message(ChatRequestStates.waiting_for_chat_request)
 async def request_chat_finish(message: Message, state: FSMContext):
     if not await ensure_access_or_paywall(message):
@@ -764,23 +783,31 @@ async def info_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
         "<b>ℹ️ О боте</b>\n\n"
-        "Этот бот мониторит выбранные Telegram-чаты и присылает уведомления, "
-        "если в сообщениях встречаются ваши ключевые слова.\n\n"
-        "<b>Как работает поиск:</b>\n"
+        "Этот бот собирает в одном месте только нужные вам сообщения из Telegram-чатов по ключевым словам.\n\n"
+        "Вам не нужно вручную мониторить десятки чатов — бот сам отслеживает новые сообщения и присылает только подходящие совпадения.\n\n"
+        "Это удобно, если:\n"
+        "• вы продавец и ищете, кто ищет товар или запчасти\n"
+        "• вы покупатель и хотите быстро видеть, кто что продаёт\n\n"
+        "<b>Как это работает:</b>\n"
         "• вы добавляете ключевые слова\n"
-        "• выбираете нужные чаты\n"
-        "• бот анализирует новые сообщения\n"
-        "• если найдено совпадение — приходит уведомление\n\n"
-        "<b>Что делает бот дополнительно:</b>\n"
-        "• игнорирует сообщения со стоп-словами\n"
-        "• игнорирует дубли\n"
-        "• если одинаковое сообщение повторяется в других чатах, бот не присылает его повторно\n\n"
-        "<b>Подписка:</b>\n"
-        "• 15 дней бесплатно после первого запуска\n"
-        "• далее доступ открывается по подписке\n"
-        "• Telegram Stars: 1 месяц — 100 Stars, 3 месяца — 250 Stars, 12 месяцев — 1000 Stars\n"
-        "• ЮMoney: 1 месяц — 200 ₽, 3 месяца — 300 ₽, 12 месяцев — 1000 ₽\n"
-        "• доступны способы оплаты: Telegram Stars и ЮMoney\n",
+        "• подключаете нужные чаты\n"
+        "• бот фильтрует сообщения и присылает совпадения\n\n"
+        "<b>Дополнительно:</b>\n"
+        "• можно добавлять стоп-слова\n"
+        "• дубли не присылаются\n"
+        "• одинаковые сообщения из разных чатов не повторяются\n\n"
+        "<b>🎁 Пробный период:</b>\n"
+        "• после первого запуска /start даётся 15 дней бесплатно\n\n"
+        "<b>⭐ Telegram Stars:</b>\n"
+        "• 1 месяц — 100 Stars\n"
+        "• 3 месяца — 250 Stars\n"
+        "• 12 месяцев — 1000 Stars\n\n"
+        "<b>💳 ЮMoney:</b>\n"
+        "• 1 месяц — 200 ₽\n"
+        "• 3 месяца — 300 ₽\n"
+        "• 12 месяцев — 1000 ₽\n\n"
+        "<b>После оплаты:</b>\n"
+        "• подписка активируется автоматически\n",
         reply_markup=get_general_menu(),
         parse_mode="HTML",
     )
