@@ -57,7 +57,7 @@ class AppUser(models.Model):
 
         now = timezone.now()
         self.trial_started_at = now
-        self.trial_expires_at = now + timedelta(days=15)
+        self.trial_expires_at = now + timedelta(days=30)
         self.is_trial_used = True
         self.save(update_fields=["trial_started_at", "trial_expires_at", "is_trial_used"])
         return True

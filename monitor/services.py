@@ -2,6 +2,10 @@ from users.models import AppUser
 from .models import Keyword, StopWord, MonitoredChat, UserChatSubscription, ChatRequest
 
 
+MAX_USER_KEYWORDS = 10
+MAX_USER_CHATS = 10
+
+
 def normalize_phrase(text: str) -> str:
     return " ".join((text or "").strip().lower().split())
 
@@ -33,17 +37,31 @@ def add_user_keyword(telegram_id: int, phrase: str):
     if not phrase:
         return None, False
 
-    keyword, created = Keyword.objects.get_or_create(
+    existing_keyword = Keyword.objects.filter(
         user=user,
         phrase=phrase,
-        defaults={"is_active": True}
+    ).first()
+
+    if existing_keyword:
+        if not existing_keyword.is_active:
+            existing_keyword.is_active = True
+            existing_keyword.save(update_fields=["is_active"])
+        return existing_keyword, False
+
+    active_keywords_count = Keyword.objects.filter(
+        user=user,
+        is_active=True,
+    ).count()
+
+    if active_keywords_count >= MAX_USER_KEYWORDS:
+        raise ValueError(f"Можно добавить не более {MAX_USER_KEYWORDS} ключевых фраз.")
+
+    keyword = Keyword.objects.create(
+        user=user,
+        phrase=phrase,
+        is_active=True,
     )
-
-    if not created and not keyword.is_active:
-        keyword.is_active = True
-        keyword.save()
-
-    return keyword, created
+    return keyword, True
 
 
 def delete_user_keyword_by_id(telegram_id: int, keyword_id: int):
@@ -57,7 +75,7 @@ def delete_user_keyword_by_id(telegram_id: int, keyword_id: int):
         return False, None
 
     keyword.is_active = False
-    keyword.save()
+    keyword.save(update_fields=["is_active"])
     return True, keyword
 
 
@@ -89,7 +107,7 @@ def add_user_stop_word(telegram_id: int, phrase: str):
 
     if not created and not stop_word.is_active:
         stop_word.is_active = True
-        stop_word.save()
+        stop_word.save(update_fields=["is_active"])
 
     return stop_word, created
 
@@ -105,7 +123,7 @@ def delete_user_stop_word_by_id(telegram_id: int, stop_word_id: int):
         return False, None
 
     stop_word.is_active = False
-    stop_word.save()
+    stop_word.save(update_fields=["is_active"])
     return True, stop_word
 
 
@@ -153,12 +171,33 @@ def toggle_user_chat(telegram_id: int, chat_id: int):
     )
 
     if created:
+        active_chats_count = UserChatSubscription.objects.filter(
+            user=user,
+            is_active=True,
+        ).count()
+
+        if active_chats_count > MAX_USER_CHATS:
+            subscription.delete()
+            raise ValueError(f"Можно подключить не более {MAX_USER_CHATS} чатов.")
+
         return True, "connected", chat
 
-    subscription.is_active = not subscription.is_active
-    subscription.save()
+    if subscription.is_active:
+        subscription.is_active = False
+        subscription.save(update_fields=["is_active"])
+        return True, "disconnected", chat
 
-    return True, "connected" if subscription.is_active else "disconnected", chat
+    active_chats_count = UserChatSubscription.objects.filter(
+        user=user,
+        is_active=True,
+    ).count()
+
+    if active_chats_count >= MAX_USER_CHATS:
+        raise ValueError(f"Можно подключить не более {MAX_USER_CHATS} чатов.")
+
+    subscription.is_active = True
+    subscription.save(update_fields=["is_active"])
+    return True, "connected", chat
 
 
 # =========================

@@ -64,14 +64,14 @@ def remove_subscription(modeladmin, request, queryset):
     modeladmin.message_user(request, f"Подписок отключено: {updated}")
 
 
-@admin.action(description="Запустить пробный период на 15 дней")
-def start_trial_15_days(modeladmin, request, queryset):
+@admin.action(description="Запустить пробный период на 30 дней")
+def start_trial_30_days(modeladmin, request, queryset):
     now = timezone.now()
     updated = 0
 
     for user in queryset:
         user.trial_started_at = now
-        user.trial_expires_at = now + timedelta(days=15)
+        user.trial_expires_at = now + timedelta(days=30)
         user.is_trial_used = True
         user.save(update_fields=["trial_started_at", "trial_expires_at", "is_trial_used"])
         updated += 1
@@ -123,7 +123,7 @@ class AppUserAdmin(admin.ModelAdmin):
         extend_subscription_90,
         extend_subscription_365,
         remove_subscription,
-        start_trial_15_days,
+        start_trial_30_days,
         reset_trial,
     ]
 

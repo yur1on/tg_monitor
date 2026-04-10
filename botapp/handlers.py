@@ -245,14 +245,16 @@ async def add_keyword_start(message: Message, state: FSMContext):
 
     await state.set_state(KeywordStates.waiting_for_new_keyword)
     await message.answer(
-        "<b>Введите новое ключевое слово или фразу.</b>\n\n"
+        "<b>Введите слово или фразу для отслеживания.</b>\n\n"
+        "Если бот увидит это слово в новых сообщениях выбранных чатов, он пришлёт вам уведомление.\n\n"
+        "<b>Примеры:</b>\n"
         "• куплю\n"
         "• ищу дисплей\n"
-        "• iphone 17",
+        "• iphone 17\n"
+        "• нужен донор\n"
+        "• ищу плату",
         parse_mode="HTML",
     )
-
-
 @router.message(KeywordStates.waiting_for_new_keyword)
 async def add_keyword_finish(message: Message, state: FSMContext):
     if not await ensure_access_or_paywall(message):
@@ -797,7 +799,7 @@ async def info_handler(message: Message, state: FSMContext):
         "<b>Дополнительно:</b>\n"
         "• можно добавлять стоп-слова\n\n"
         "<b>🎁 Пробный период:</b>\n"
-        "• после первого запуска /start даётся 15 дней бесплатно\n\n"
+        "• после первого запуска /start даётся 30 дней бесплатно\n\n"
         "<b>⭐ Telegram Stars:</b>\n"
         "• 1 месяц — 100 Stars\n"
         "• 3 месяца — 250 Stars\n"
