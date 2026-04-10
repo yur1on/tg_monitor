@@ -40,7 +40,7 @@ def get_keywords_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="➕ Добавить слово")],
-            [KeyboardButton(text="🗑 Удалить слово")],
+            [KeyboardButton(text="👁 Посмотреть / 🗑 удалить слово")],
             [KeyboardButton(text="⬅️ Назад")],
         ],
         resize_keyboard=True,
@@ -51,12 +51,11 @@ def get_stop_words_menu():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="➕ Добавить стоп-слово")],
-            [KeyboardButton(text="🗑 Удалить стоп-слово")],
+            [KeyboardButton(text="👁 Посмотреть / 🗑 удалить стоп-слово")],
             [KeyboardButton(text="⬅️ Назад")],
         ],
         resize_keyboard=True,
     )
-
 
 def get_chats_menu():
     return ReplyKeyboardMarkup(

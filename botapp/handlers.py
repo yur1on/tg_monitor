@@ -246,10 +246,9 @@ async def add_keyword_start(message: Message, state: FSMContext):
     await state.set_state(KeywordStates.waiting_for_new_keyword)
     await message.answer(
         "<b>Введите новое ключевое слово или фразу.</b>\n\n"
-        "Примеры:\n"
+        "• куплю\n"
         "• ищу дисплей\n"
-        "• куплю плату\n"
-        "• iphone 11",
+        "• iphone 17",
         parse_mode="HTML",
     )
 
@@ -298,7 +297,7 @@ async def add_keyword_finish(message: Message, state: FSMContext):
         )
 
 
-@router.message(F.text.in_(["🗑 Удалить слово", "Удалить слово"]))
+@router.message(F.text.in_(["👁 Посмотреть / 🗑 удалить слово", "🗑 Удалить слово", "Удалить слово"]))
 async def delete_keyword_start(message: Message, state: FSMContext):
     if not await ensure_access_or_paywall(message):
         return
@@ -428,7 +427,7 @@ async def add_stop_word_finish(message: Message, state: FSMContext):
         )
 
 
-@router.message(F.text.in_(["🗑 Удалить стоп-слово", "Удалить стоп-слово"]))
+@router.message(F.text.in_(["👁 Посмотреть / 🗑 удалить стоп-слово", "🗑 Удалить стоп-слово", "Удалить стоп-слово"]))
 async def delete_stop_word_start(message: Message, state: FSMContext):
     if not await ensure_access_or_paywall(message):
         return
