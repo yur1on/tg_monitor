@@ -1,4 +1,6 @@
 import os
+
+from aiogram import Bot
 import requests
 from dotenv import load_dotenv
 
@@ -20,3 +22,12 @@ def send_telegram_message(chat_id: int, text: str) -> None:
         timeout=20,
     )
     response.raise_for_status()
+
+
+async def send_telegram_message_async(bot: Bot, chat_id: int, text: str) -> None:
+    await bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )

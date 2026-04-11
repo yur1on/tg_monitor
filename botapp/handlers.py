@@ -809,7 +809,8 @@ async def info_handler(message: Message, state: FSMContext):
         "• 3 месяца — 300 ₽\n"
         "• 12 месяцев — 1000 ₽\n\n"
         "<b>После оплаты:</b>\n"
-        "• подписка активируется автоматически\n",
+        "• подписка активируется автоматически\n\n"
+        "•<b>По всем вопросам - @Yur1on</b> \n",
         reply_markup=get_general_menu(),
         parse_mode="HTML",
     )

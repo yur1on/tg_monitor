@@ -1,5 +1,10 @@
+from datetime import timedelta
+
+from django.utils import timezone
+
 from users.models import AppUser
 from .models import Keyword, StopWord, MonitoredChat, UserChatSubscription, ChatRequest
+from .models import MatchedMessage
 
 
 MAX_USER_KEYWORDS = 10
@@ -219,3 +224,9 @@ def create_chat_request(telegram_id: int, country: str, chat_input: str, comment
         chat_input=chat_input,
         comment=comment,
     )
+
+
+def cleanup_old_matched_messages(retention_days: int = 3) -> int:
+    threshold = timezone.now() - timedelta(days=retention_days)
+    deleted_count, _ = MatchedMessage.objects.filter(created_at__lt=threshold).delete()
+    return deleted_count
